@@ -1,0 +1,19 @@
+[Unit]
+Description=TerraTrace Smart Farming AI Edge Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/terratrace/edge_pi
+EnvironmentFile=/home/pi/terratrace/edge_pi/.env
+ExecStart=/usr/bin/python3 /home/pi/terratrace/edge_pi/main.py --interval 60
+ExecStop=/usr/bin/python3 /home/pi/terratrace/edge_pi/scripts/emergency_stop.py
+Restart=always
+RestartSec=5
+KillMode=process
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

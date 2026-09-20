@@ -1,0 +1,27 @@
+[
+  {
+    "severity_score": 0,
+    "severity_label": "Healthy",
+    "pump_duration_seconds": 0
+  },
+  {
+    "severity_score": 1,
+    "severity_label": "Very Low",
+    "pump_duration_seconds": 1
+  },
+  {
+    "severity_score": 2,
+    "severity_label": "Low",
+    "pump_duration_seconds": 2
+  },
+  {
+    "severity_score": 3,
+    "severity_label": "High",
+    "pump_duration_seconds": 3
+  },
+  {
+    "severity_score": 4,
+    "severity_label": "Very High",
+    "pump_duration_seconds": 5
+  }
+]

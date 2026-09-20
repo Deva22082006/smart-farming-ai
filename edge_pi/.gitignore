@@ -1,0 +1,21 @@
+# Edge Pi local secrets & environment
+.env
+.env.*
+*.env
+secrets.env
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+data/offline_queue.db
+
+# Virtual environments
+.venv/
+venv/

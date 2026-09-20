@@ -1,0 +1,5 @@
+{
+  "disease_threshold": 0.70,
+  "severity_threshold": 0.70,
+  "description": "Both disease and severity confidences must meet or exceed 0.70 to trigger automated treatment."
+}

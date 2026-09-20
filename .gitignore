@@ -1,4 +1,51 @@
-node_modules/
+# Environment & Secrets
 .env
+.env.*
+*.env
+*.key
+*.pem
+*.keystore
+*.jks
+secrets.env
+
+# Large Build Binaries & Packages
+*.apk
+*.aab
+*.tar.gz
+*.zip
+
+# Android & Gradle
+**/local.properties
+.gradle/
+build/
+android/app/build/
+android/.gradle/
+
+# Dependencies
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Python caches & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Databases & local state
+*.db
+*.sqlite
+*.sqlite3
+data/offline_queue.db
+
+# Supabase CLI local state
 supabase/.netlify/
 supabase/.branches/
+supabase/.temp/
+
