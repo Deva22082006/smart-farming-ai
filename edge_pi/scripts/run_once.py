@@ -40,8 +40,7 @@ def main():
         camera = get_camera("file", fallback_image=img_path)
     else:
         sample_img = EDGE_DIR / "data" / "sample_leaf.jpg"
-        if sample_img.exists():
-            camera = get_camera("file", fallback_image=sample_img)
+        camera = get_camera("auto", fallback_image=sample_img)
 
     pipeline = EdgePipeline(config=config, camera=camera)
     result = pipeline.run_cycle()
