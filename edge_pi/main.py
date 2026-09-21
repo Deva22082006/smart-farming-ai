@@ -19,9 +19,11 @@ def setup_logging(verbose: bool = False) -> None:
 def main():
     parser = argparse.ArgumentParser(description="TerraTrace Edge Node Pipeline")
     parser.add_argument("--once", action="store_true", help="Execute single cycle and terminate")
-    parser.add_argument("--interval", type=float, default=60.0, help="Seconds between monitoring cycles")
+    parser.add_argument("--interval", type=float, default=15.0, help="Seconds between monitoring cycles (default: 15s)")
+    parser.add_argument("--count", type=int, default=0, help="Number of cycles to run (default: 0 = continuous loop)")
+    parser.add_argument("--stream", type=str, default=None, help="Phone / IP webcam stream URL (e.g. http://10.124.72.153:8080/video)")
     parser.add_argument("--image", type=str, default=None, help="Path to static image file for testing")
-    parser.add_argument("--camera", type=str, default="auto", choices=["auto", "webcam", "file"], help="Camera source")
+    parser.add_argument("--camera", type=str, default="auto", choices=["auto", "webcam", "file", "stream"], help="Camera source")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose debug logging")
     args = parser.parse_args()
 
@@ -31,9 +33,12 @@ def main():
 
     config = ConfigLoader.get()
     
-    # Custom camera override if image specified
+    # Custom camera override
     camera = None
-    if args.image:
+    if args.stream:
+        logger.info(f"Connecting to phone / stream camera: {args.stream}")
+        camera = get_camera("stream", stream_url=args.stream)
+    elif args.image:
         img_path = Path(args.image)
         if not img_path.exists():
             logger.error(f"Image path does not exist: {img_path}")
@@ -59,14 +64,25 @@ def main():
             logger.error(f"Cycle failed: {result.get('error')}")
             sys.exit(1)
 
-    # Continuous monitoring daemon loop
-    logger.info(f"Entering continuous monitoring loop (Interval: {args.interval}s)...")
+    # Continuous monitoring loop
+    cycle_desc = f"{args.count} cycles" if args.count > 0 else "continuous loop (press Ctrl+C to stop)"
+    logger.info(f"Entering edge monitoring: {cycle_desc} with {args.interval}s interval...")
+    cycles_completed = 0
+
     try:
         while True:
+            cycles_completed += 1
+            logger.info(f"\n>>> Running Cycle #{cycles_completed}...")
             pipeline.run_cycle()
+
+            if args.count > 0 and cycles_completed >= args.count:
+                logger.info(f"Reached requested cycle count ({args.count}). Done!")
+                break
+
+            logger.info(f"Sleeping {args.interval}s until next cycle...")
             time.sleep(args.interval)
     except KeyboardInterrupt:
-        logger.info("Terminating edge monitoring loop.")
+        logger.info("\nTerminating edge monitoring loop safely. Goodbye!")
 
 if __name__ == "__main__":
     main()
