@@ -19,6 +19,7 @@ from terratrace.config_loader import ConfigLoader
 def main():
     parser = argparse.ArgumentParser(description="TerraTrace Single Run Verification")
     parser.add_argument("--image", type=str, default=None, help="Custom image path to test")
+    parser.add_argument("--stream", type=str, default=None, help="IP Webcam / smartphone stream URL (e.g. http://192.168.1.50:8080/video or /shot.jpg)")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
 
@@ -32,7 +33,10 @@ def main():
     config = ConfigLoader.get()
 
     camera = None
-    if args.image:
+    if args.stream:
+        print(f"Connecting to phone / stream camera: {args.stream}")
+        camera = get_camera("stream", stream_url=args.stream)
+    elif args.image:
         img_path = Path(args.image)
         if not img_path.exists():
             print(f"Error: image not found at {img_path}")

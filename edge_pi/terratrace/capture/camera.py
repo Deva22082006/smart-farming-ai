@@ -80,6 +80,57 @@ class WebcamCamera(CameraInterface):
             logger.info("Webcam released.")
 
 
+class StreamCamera(CameraInterface):
+    """
+    Captures frames from an IP webcam, smartphone camera stream, or network RTSP/HTTP feed.
+    Compatible with apps like 'IP Webcam', 'DroidCam', 'IP Camera Lite' on Android/iOS.
+    """
+
+    def __init__(self, stream_url: str, timeout: int = 5):
+        self.stream_url = stream_url
+        self.timeout = timeout
+        self.cap: Optional[cv2.VideoCapture] = None
+
+    def _init_cap(self):
+        if self.cap is None or not self.cap.isOpened():
+            logger.info(f"[StreamCamera] Opening network video stream: {self.stream_url}")
+            self.cap = cv2.VideoCapture(self.stream_url)
+
+    def capture(self) -> np.ndarray:
+        # If it's a direct snapshot URL (e.g., http://.../shot.jpg)
+        url_lower = self.stream_url.lower()
+        if url_lower.endswith(('.jpg', '.jpeg', '.png')) or '/shot.jpg' in url_lower:
+            try:
+                import urllib.request
+                req = urllib.request.urlopen(self.stream_url, timeout=self.timeout)
+                img_bytes = req.read()
+                arr = np.asarray(bytearray(img_bytes), dtype=np.uint8)
+                bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                if bgr is not None and bgr.size > 0:
+                    return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+            except Exception as e:
+                logger.warning(f"[StreamCamera] Snapshot fetch failed ({e}). Falling back to VideoCapture.")
+
+        self._init_cap()
+        if not self.cap.isOpened():
+            raise RuntimeError(f"Could not open network stream: {self.stream_url}")
+
+        # Flush buffer with throwaway read to get real-time low-latency frame
+        for _ in range(2):
+            self.cap.grab()
+        ret, frame = self.cap.read()
+        if not ret or frame is None:
+            raise RuntimeError(f"Failed to capture frame from network stream: {self.stream_url}")
+
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    def release(self) -> None:
+        if self.cap is not None and self.cap.isOpened():
+            self.cap.release()
+            self.cap = None
+            logger.info("[StreamCamera] Network stream released.")
+
+
 class PiCameraModule(CameraInterface):
     """
     Captures frames from the Raspberry Pi CSI camera via Picamera2.
@@ -147,6 +198,7 @@ def get_camera(
     device_index: int = 0,
     fallback_image: Optional[Path] = None,
     resolution: Tuple[int, int] = (640, 480),
+    stream_url: Optional[str] = None,
 ) -> CameraInterface:
     """
     Factory creating appropriate camera backend based on runtime environment.
@@ -154,16 +206,16 @@ def get_camera(
     camera_type:
       "file"      -> FileCamera
       "webcam"    -> WebcamCamera (USB / V4L2)
+      "stream"    -> StreamCamera (IP webcam / smartphone stream / RTSP)
       "picamera2" -> PiCameraModule (CSI camera)
       "auto"      -> on Linux: try Picamera2 first, then USB/V4L2 webcam, then
                      FileCamera. On other platforms: webcam, then FileCamera.
-
-    The "auto" ordering on Linux is deliberate: a Pi with a CSI camera
-    attached should never end up probing /dev/video* USB devices first --
-    on a headless Pi with no USB webcam that probe can hang or fail slowly,
-    and even when it succeeds it would silently use the wrong camera if a
-    USB device happens to be present alongside the CSI camera.
     """
+    if camera_type in ("stream", "ip", "url"):
+        if not stream_url:
+            raise ValueError("StreamCamera requires 'stream_url' (e.g. http://192.168.1.50:8080/video).")
+        return StreamCamera(stream_url)
+
     if camera_type == "file":
         if not fallback_image:
             raise ValueError("FileCamera requires fallback_image path.")

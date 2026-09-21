@@ -93,6 +93,7 @@ class EdgePipeline:
             camera_type=cam_cfg.get("type", "auto"),
             device_index=cam_cfg.get("device_index", 0),
             fallback_image=fallback_img,
+            stream_url=cam_cfg.get("stream_url", None),
         )
 
         # 6. Synchronization & State
